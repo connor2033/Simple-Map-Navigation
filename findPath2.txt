@@ -1,0 +1,54 @@
+private Stack<Node> pathStack = new Stack<Node>();
+
+	public Iterator<Node> findPath(int start, int destination, int initialMoney) throws GraphException {
+		
+		Node startNode = Map.getNode(start);
+		Node destNode = Map.getNode(destination);
+		Iterator<Node> finalPath = null;
+		int Money = initialMoney;
+		
+		startNode.setMark(true);
+		pathStack.push(startNode);
+		if(startNode == destNode) {
+			finalPath = pathStack.iterator();
+			return finalPath;
+		}
+		else {
+			Iterator<Edge> nodeEdges = Map.incidentEdges(startNode);
+			Edge currEdge = null;
+			
+			while(nodeEdges.hasNext()) {
+				currEdge = nodeEdges.next();
+				if(currEdge.secondEndpoint().getMark() == false) {
+					
+					//reward
+					if(currEdge.getType() == -1) {
+						if(findPath(currEdge.secondEndpoint().getName(), destination, Money + gain) != null) {
+							finalPath = pathStack.iterator();
+							return finalPath;
+						}
+					}
+					//public
+					else if(currEdge.getType() == 0) {
+						if(findPath(currEdge.secondEndpoint().getName(), destination, Money) != null) {
+							finalPath = pathStack.iterator();
+							return finalPath;
+						}
+					}
+					//toll
+					else if(currEdge.getType() == 1) {
+						if(findPath(currEdge.secondEndpoint().getName(), destination, Money - toll) != null) {
+							finalPath = pathStack.iterator();
+							return finalPath;
+						}
+					}
+					
+				}
+			}
+			
+			pathStack.pop();
+			startNode.setMark(false);
+			return null;
+			
+		}	
+	}

@@ -1,0 +1,110 @@
+//function that will return stack of nodes to destination or null if path not found
+	//
+	//push currNode onto top of stack and mark node first
+	//check if node == destination, return stack if so
+	//create iterator of edges
+	//
+	//prioritize edges by Reward>Public>Private
+	//loop through edges (while has next) with separate loop for each edge type
+	//must reset iterator after each while loop
+	//within the while loop check first and second node (just in case with if and else if), and check money for private road and if unmarked
+	//add/subtract money for reward/toll roads
+	//do recursive call on stack
+	//if stack != null after call, return stack (else it didn't find a path on this edge)
+	//
+	//at end after while loops (no path found from node) unmark currNode and pop from stack, then return null
+	
+	//recursive helper method for findPath to return stack of path nodes
+	private Stack<Node> pathStack(Node currNode, Node dest, int Money, Stack<Node> nodePath) throws GraphException {
+		
+	
+		Stack<Node> tempStack = new Stack<Node>();
+		tempStack = nodePath;
+		tempStack.push(currNode);
+				
+		currNode.setMark(true);
+		if(currNode == dest) return tempStack;
+
+		
+		//creating edge iterator
+		Iterator<Edge> nodeEdges = Map.incidentEdges(currNode);
+		Edge tempEdge = null;
+		
+		//reward road
+		while(nodeEdges.hasNext()) {
+			tempEdge = nodeEdges.next();
+			
+			//checking type, and if end point isn't marked (both ends just in case)
+			if(tempEdge.getType() == -1 && tempEdge.firstEndpoint().getMark() == false) {
+				
+				Money += gain;
+				tempStack = pathStack(tempEdge.firstEndpoint(), dest, Money, tempStack);
+				if(tempStack != null) return tempStack;	
+				
+			}
+			else if(tempEdge.getType() == -1 && tempEdge.secondEndpoint().getMark() == false) {
+				
+				Money += gain;
+				tempStack = pathStack(tempEdge.secondEndpoint(), dest, Money, tempStack);
+				if(tempStack != null) return tempStack;
+				
+			}	
+		}
+		
+		
+		//resetting edge iterator
+		nodeEdges = Map.incidentEdges(currNode);
+		tempEdge = null;
+		
+		//public road
+		while(nodeEdges.hasNext()) {
+			tempEdge = nodeEdges.next();
+			
+			//checking type, and if end point isn't marked (both ends just in case)
+			if(tempEdge.getType() == 0 && tempEdge.firstEndpoint().getMark() == false) {
+				
+				tempStack = pathStack(tempEdge.firstEndpoint(), dest, Money, tempStack);
+				if(tempStack != null) return tempStack;				
+			
+			}
+			else if(tempEdge.getType() == 0 && tempEdge.secondEndpoint().getMark() == false) {
+				
+				tempStack = pathStack(tempEdge.secondEndpoint(), dest, Money, tempStack);
+				if(tempStack != null) return tempStack;
+				
+			}	
+		}		
+		
+		
+		//resetting edge iterator
+		nodeEdges = Map.incidentEdges(currNode);
+		tempEdge = null;
+		
+		//toll road
+		while(nodeEdges.hasNext()) {
+			tempEdge = nodeEdges.next();
+			
+			//checking type, and if end point isn't marked (both ends just in case)
+			if(tempEdge.getType() == 1 && tempEdge.firstEndpoint().getMark() == false && Money >= toll) {
+				
+				Money -= toll;
+				tempStack = pathStack(tempEdge.firstEndpoint(), dest, Money, tempStack);
+				if(tempStack != null) return tempStack;				
+			
+			}
+			else if(tempEdge.getType() == 1 && tempEdge.secondEndpoint().getMark() == false && Money >= toll) {
+				
+				Money -= toll;
+				tempStack = pathStack(tempEdge.secondEndpoint(), dest, Money, tempStack);
+				if(tempStack != null) return tempStack;
+				
+			}	
+		}		
+		
+		
+		//no path is found at node
+		currNode.setMark(false);
+		tempStack.pop();
+		return null;			
+		
+	}

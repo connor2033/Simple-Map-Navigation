@@ -1,0 +1,15 @@
+	// for testing - REMEMBER TO REMOVE (cause public)
+	public void printGraph() {
+		for (int i = 0; i < numNodes; i++) {
+			for (int e = 0; e < numNodes; e++) {
+				if (e % numNodes == 0)
+					System.out.print("\n" + i + ":\t");
+				if (i == e)
+					System.out.print("  #   ");
+				else if (graphArray[i][e] == null)
+					System.out.print("n ");
+				else
+					System.out.print(graphArray[i][e].getType() + " ");
+			}
+		}
+	}

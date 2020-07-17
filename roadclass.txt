@@ -1,0 +1,203 @@
+import java.util.Iterator;
+import java.io.*;
+import java.util.*;
+
+public class RoadMap {
+	
+	private Graph Map;
+	
+	private int scale;
+	private int startNode;
+	private int destNode;
+	private int nodeWidth; // # of horizontal nodes
+	private int nodeLength; // # of vertical nodes
+	private int iniMoney;
+	private int toll;
+	private int gain;
+	
+	
+	public RoadMap(String inputFile) throws MapException, FileNotFoundException, IOException, GraphException {
+
+
+		File mapFile = new File(inputFile);
+		if(mapFile.exists() == false) throw new MapException();
+		else {
+			BufferedReader mapReader = new BufferedReader(new FileReader(mapFile));
+
+			// some of these aren't important
+			scale = Integer.parseInt(mapReader.readLine());
+			startNode = Integer.parseInt(mapReader.readLine());
+			destNode = Integer.parseInt(mapReader.readLine());
+			nodeWidth = Integer.parseInt(mapReader.readLine());
+			nodeLength = Integer.parseInt(mapReader.readLine());
+			iniMoney = Integer.parseInt(mapReader.readLine());
+			toll = Integer.parseInt(mapReader.readLine());
+			gain = Integer.parseInt(mapReader.readLine());
+
+			// creating map of correct size
+			Map = new Graph(nodeWidth * nodeLength);
+
+			// creating string of map read in from file
+			String mapString = "";
+			for (int i = 0; i < (nodeLength * 2) - 1; i++) {
+				mapString += mapReader.readLine();
+			}
+
+			mapReader.close();
+
+			// splitting string into array
+			String[] mapArray = mapString.split("");
+			
+			//cloning mapArray and changing nodes in nodeTrack from "+" to trackable ints
+			String[] nodeTrack = mapArray.clone();
+			int numNode = 0;
+			for (int i = 0; i < nodeTrack.length; i++) {
+				if(nodeTrack[i].equals("+")) {
+					nodeTrack[i] = Integer.toString(numNode);
+					numNode += 1;
+				}
+			}
+			
+			
+			//temp nodes
+			Node left;
+			Node right;
+			Node up;
+			Node down;
+			
+			int mapWidth = (nodeWidth*2)-1;
+			
+			//loop through array inserting each edge
+			for(int i = 0; i < mapArray.length; i++) {
+				
+				//if current char is an edge
+				if(mapArray[i].equals("T") || mapArray[i].equals("F") || mapArray[i].equals("C")) {
+					
+					//horizontal (checks if on end)
+					if(mapArray[i-1].equals("+") && mapArray[i+1].equals("+")) {
+						
+						if( (i == 1) ^ ((i-1)%mapWidth != 0 && i%mapWidth != 0) ) {
+							
+							//creating nodes with names found from nodeTrack array
+							left = new Node(Integer.parseInt(nodeTrack[i-1]));
+							right = new Node(Integer.parseInt(nodeTrack[i+1]));
+							
+							//inserting edge based on type
+							if(mapArray[i].equals("T")) {
+								Map.insertEdge(left, right, 1);
+							}
+							else if(mapArray[i].equals("F")) {
+								Map.insertEdge(left, right, 0);
+							}
+							else {
+								Map.insertEdge(left, right, -1);
+							}
+							
+						}
+							
+					}
+					
+					//vertical (checks if on top or bottom row)
+					if(i<=(mapArray.length-mapWidth) && i>=mapWidth && mapArray[i-mapWidth].equals("+") && mapArray[i+mapWidth].equals("+")) {
+						//creating nodes with names found from nodeTrack array
+						up = new Node(Integer.parseInt(nodeTrack[i-mapWidth]));
+						down = new Node(Integer.parseInt(nodeTrack[i+mapWidth]));
+						
+						//inserting edge based on type
+						if(mapArray[i].equals("T")) {
+							Map.insertEdge(up, down, 1);
+						}
+						else if(mapArray[i].equals("F")) {
+							Map.insertEdge(up, down, 0);
+						}
+						else {
+							Map.insertEdge(up, down, -1);
+						}	
+					}
+							
+				}
+				
+			} //end of for loop
+			
+		}
+
+	}
+
+	public Graph getGraph() {
+		return Map;
+	}
+
+	public int getStartingNode() {
+		return startNode;
+	}
+
+	public int getDestinationNode() {
+		return destNode;
+	}
+
+	public int getInitialMoney() {
+		return iniMoney;
+	}
+	
+	private Stack<Node> pathStack = new Stack<Node>();
+
+	public Iterator<Node> findPath(int start, int destination, int initialMoney) throws GraphException {
+		
+		Node startNode = Map.getNode(start);
+		Node destNode = Map.getNode(destination);
+		Iterator<Node> finalPath = null;
+		int Money = initialMoney;
+		
+		startNode.setMark(true);
+		pathStack.push(startNode);
+		if(startNode == destNode) {
+			finalPath = pathStack.iterator();
+			return finalPath;
+		}
+		else {
+			Iterator<Edge> nodeEdges = Map.incidentEdges(startNode);
+			Edge currEdge = null;
+			
+			while(nodeEdges.hasNext()) {
+				currEdge = nodeEdges.next();
+				
+				Node nextNode = currEdge.secondEndpoint();
+				if(currEdge.secondEndpoint().getName() == startNode.getName()) {
+					nextNode = currEdge.firstEndpoint();
+				}
+				
+				if(nextNode.getMark() == false) {
+					
+					//reward
+					if(currEdge.getType() == -1) {
+						if(findPath(nextNode.getName(), destination, Money + gain) != null) {
+							finalPath = pathStack.iterator();
+							return finalPath;
+						}
+					}
+					//public
+					else if(currEdge.getType() == 0) {
+						if(findPath(nextNode.getName(), destination, Money) != null) {
+							finalPath = pathStack.iterator();
+							return finalPath;
+						}
+					}
+					//toll
+					else if(currEdge.getType() == 1) {
+						if(findPath(nextNode.getName(), destination, Money - toll) != null) {
+							finalPath = pathStack.iterator();
+							return finalPath;
+						}
+					}
+					
+				}
+			}
+			
+			pathStack.pop();
+			startNode.setMark(false);
+			return null;
+			
+		}	
+	}
+
+}
